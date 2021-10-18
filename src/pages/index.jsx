@@ -1,19 +1,27 @@
-import Head from 'next/head';
 import Feed from '../components/Feed';
-import Header from '../components/Header';
+import { useSession } from 'next-auth/react';
+import { getProviders, signIn as SignIntoProvider } from 'next-auth/react';
+import SignIn from '../components/SignIn';
 
-export default function Home() {
+export default function Home({ providers }) {
+  const { data: session } = useSession();
   return (
     <div className="bg-gray-50 h-screen overflow-y-scroll scrollbar-hide">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       {/* Header */}
-      <Header />
       {/* Feed */}
-      <Feed />
+      {session && <Feed />}
+      {!session && <SignIn providers={providers} />}
       {/* Modal */}
     </div>
   );
 }
+
+export const getServerSideProps = async ctx => {
+  const providers = await getProviders();
+
+  return {
+    props: {
+      providers
+    }
+  };
+};
