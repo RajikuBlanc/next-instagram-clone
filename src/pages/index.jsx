@@ -1,7 +1,8 @@
 import Feed from '../components/Feed';
 import { useSession } from 'next-auth/react';
-import { getProviders, signIn as SignIntoProvider } from 'next-auth/react';
+import { getProviders } from 'next-auth/react';
 import SignIn from '../components/SignIn';
+import Modal from '../components/Modal';
 
 export default function Home({ providers }) {
   const { data: session } = useSession();
@@ -12,6 +13,7 @@ export default function Home({ providers }) {
       {session && <Feed />}
       {!session && <SignIn providers={providers} />}
       {/* Modal */}
+      <Modal />
     </div>
   );
 }
