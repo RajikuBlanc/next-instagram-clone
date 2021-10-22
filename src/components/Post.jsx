@@ -7,6 +7,7 @@ import {
   PaperAirplaneIcon
 } from '@heroicons/react/outline';
 import { HeartIcon as HeartIconFilled } from '@heroicons/react/solid';
+
 export default function Post({ id, username, userImg, img, caption }) {
   return (
     <div className="bg-white my-7 border rounded-sm max-w-full">
@@ -18,6 +19,7 @@ export default function Post({ id, username, userImg, img, caption }) {
       </div>
       {/* img */}
       <img className="w-full object-cover" src={img} alt="" />
+
       {/* button */}
       <div className="flex justify-between px-4 pt-4">
         <div className="flex space-x-2">
@@ -27,6 +29,7 @@ export default function Post({ id, username, userImg, img, caption }) {
         </div>
         <BookmarkIcon className="btn" />
       </div>
+
       {/* caption */}
       <p className="p-5 truncate">
         <span className="mr-1 font-bold">{username}</span>
