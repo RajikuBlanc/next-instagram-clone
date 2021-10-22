@@ -3,13 +3,51 @@ import { useRecoilState } from 'recoil';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useRef, useState } from 'react';
 import { CameraIcon } from '@heroicons/react/solid';
+import { collection, addDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { useSession } from 'next-auth/react';
+import { db, storage } from '../../firebase';
+import { getDownloadURL, ref, uploadString } from '@firebase/storage';
 
 export default function Modal() {
+  const { data: session } = useSession();
   const [open, setOpen] = useRecoilState(modalState);
   const [loading, setLoading] = useState(false);
-  const filePickerRef = useRef(null);
-  const captionRef = useRef(null);
+  const [caption, setCaption] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const filePickerRef = useRef(null);
+
+  // Firebaseにアップロード
+  const uploadPost = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    // ドキュメントの追加
+    const docRef = await addDoc(collection(db, 'posts'), {
+      username: session.user.username,
+      caption: caption,
+      profileImg: session.user.image,
+      timestamp: serverTimestamp()
+    });
+
+    // 画像のstrage場所を指定
+    const imageRef = ref(storage, `posts/${docRef.id}/image`);
+
+    // 画像の更新
+    await uploadString(imageRef, selectedFile, 'data_url').then(async snapshot => {
+      const downloadURL = await getDownloadURL(imageRef);
+      await updateDoc(doc(db, 'posts', docRef.id), {
+        image: downloadURL
+      });
+    });
+
+    // state系をリセット
+    setOpen(false);
+    setLoading(false);
+    setSelectedFile(null);
+    setCaption('');
+  };
+
+  // 画像を追加・選択
   const addImageToPost = e => {
     const reader = new FileReader();
     if (e.target.files[0]) {
@@ -20,10 +58,6 @@ export default function Modal() {
     };
   };
 
-  const uploadPost = async () => {
-    if (loading) return;
-    setLoading(true);
-  };
   return (
     <div>
       <Transition.Root show={open} as={Fragment}>
@@ -86,10 +120,11 @@ export default function Modal() {
                   {/* テキストフィールド */}
                   <div className="mt-2">
                     <input
+                      value={caption}
                       type="text"
                       className="border-none focus:ring-0 text-center w-full"
                       placeholder="Text"
-                      ref={captionRef}
+                      onChange={e => setCaption(e.target.value)}
                     />
                   </div>
 
@@ -97,9 +132,11 @@ export default function Modal() {
                   <div className="mt-5 sm:mt-6">
                     <button
                       type="button"
-                      className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600  text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                      disabled={!selectedFile}
+                      className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600  text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      onClick={uploadPost}
                     >
-                      Upload Post
+                      {loading ? 'Uploading...' : 'Upload Post'}
                     </button>
                   </div>
                 </div>
